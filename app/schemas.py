@@ -1,15 +1,19 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 from datetime import date
+import uuid
 
 class JobSeekerSignup(BaseModel):
-    full_name: str
+    id: Optional[uuid.UUID] = Field(default_factory=uuid.uuid4)
+    first_name: str
+    middle_name: Optional[str] = ""
+    last_name: str
     email_id: EmailStr
-    phone_number: str  # Must be string for varchar(10)
+    phone_number: str  # Must be exactly 10 digits
     accepted_terms_policy: bool
-    password: str
+    password: str  # Plaintext for validation; will be hashed before insert
     username: str
-    gender: str
+    gender: str  # Should match enum values in Supabase
     location: str
     dob: date
-    role_type: str
+    role_type: str  # Should match enum values in Supabase
