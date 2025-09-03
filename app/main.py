@@ -1,4 +1,4 @@
-# app/main.py - Fixed for Render deployment
+# app/main.py - Updated for Render deployment
 import os
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -40,9 +40,8 @@ def create_app() -> FastAPI:
         "http://localhost:3000",
         "http://localhost:8000",
         "http://localhost:8080",
-        "https://jobseeker-backend-3ypp.onrender.com",  # Your Render URL
         "https://your-frontend-domain.com",  # Add your actual frontend domain
-        "*"  # Temporarily allow all origins for testing
+        "https://*.onrender.com",  # Allow all Render subdomains
     ]
 
     app.add_middleware(
@@ -58,13 +57,15 @@ def create_app() -> FastAPI:
     # Include API router
     app.include_router(api_router, prefix="/api", tags=["API"])
 
-    # Root endpoint - Fixed to handle both GET and HEAD requests
+    # Root endpoint - Handle both GET and HEAD requests
     @app.get("/")
-    @app.head("/")  # Add HEAD method support
+    @app.head("/")
     async def root():
         return {
             "message": "Welcome to HireQA API 🎯",
             "status": "running",
+            "version": "1.0.0",
+            "environment": os.getenv("ENVIRONMENT", "production"),
             "available_routes": {
                 "docs": "/docs",
                 "redoc": "/redoc", 
@@ -78,12 +79,21 @@ def create_app() -> FastAPI:
     @app.get("/api/health")
     @app.head("/api/health")
     async def health_check():
-        return {"status": "healthy", "version": "1.0.0"}
+        return {"status": "healthy", "version": "1.0.0", "port": port}
 
     @app.get("/api/health/ready")
     async def health_check_ready():
         try:
-            return {"status": "ready", "database": "connected", "port": port}
+            # Test Supabase connection
+            from app.supabase_client import supabase
+            test_result = supabase.table("jobseeker").select("*").limit(1).execute()
+            
+            return {
+                "status": "ready", 
+                "database": "connected", 
+                "port": port,
+                "supabase": "connected"
+            }
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -124,8 +134,13 @@ def create_app() -> FastAPI:
 # Instantiate the app
 app = create_app()
 
-# Add this for Render deployment debugging
+# Health check for Render
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+# For local development
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port, reload=True)
