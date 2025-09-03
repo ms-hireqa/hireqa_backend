@@ -1,5 +1,4 @@
-# app/main.py
-
+# app/main.py - Fixed for Render deployment
 import os
 from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,6 +23,9 @@ from app.jwt_handler import (
 from app.models import UserResponse
 
 def create_app() -> FastAPI:
+    # Get port from environment (Render sets PORT automatically)
+    port = int(os.environ.get("PORT", 8000))
+    
     app = FastAPI(
         title="HireQA API",
         description="Backend API for HireQA Job Portal",
@@ -33,19 +35,21 @@ def create_app() -> FastAPI:
         openapi_url="/openapi.json"
     )
 
-    # CORS middleware configuration
+    # CORS middleware - Updated for production
     origins = [
         "http://localhost:3000",
         "http://localhost:8000",
         "http://localhost:8080",
-        "https://your-production-domain.com"
+        "https://jobseeker-backend-3ypp.onrender.com",  # Your Render URL
+        "https://your-frontend-domain.com",  # Add your actual frontend domain
+        "*"  # Temporarily allow all origins for testing
     ]
 
     app.add_middleware(
         CORSMiddleware,
         allow_origins=origins,
         allow_credentials=True,
-        allow_methods=["*"],
+        allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         allow_headers=["*"],
         expose_headers=["*"],
         max_age=600
@@ -54,33 +58,32 @@ def create_app() -> FastAPI:
     # Include API router
     app.include_router(api_router, prefix="/api", tags=["API"])
 
-    # Root endpoint
+    # Root endpoint - Fixed to handle both GET and HEAD requests
     @app.get("/")
+    @app.head("/")  # Add HEAD method support
     async def root():
         return {
             "message": "Welcome to HireQA API 🎯",
+            "status": "running",
             "available_routes": {
                 "docs": "/docs",
-                "redoc": "/redoc",
+                "redoc": "/redoc", 
                 "health": "/api/health",
-                "user_info": "/api/users/me"
+                "login": "/api/login",
+                "signup": "/api/signup/jobseeker"
             }
         }
 
-    # Optional: redirect root to docs
-    # @app.get("/", include_in_schema=False)
-    # async def redirect_to_docs():
-    #     return RedirectResponse(url="/docs")
-
-    # Health check
+    # Health check endpoints
     @app.get("/api/health")
+    @app.head("/api/health")
     async def health_check():
         return {"status": "healthy", "version": "1.0.0"}
 
     @app.get("/api/health/ready")
     async def health_check_ready():
         try:
-            return {"status": "ready", "database": "connected"}
+            return {"status": "ready", "database": "connected", "port": port}
         except Exception as e:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -120,3 +123,9 @@ def create_app() -> FastAPI:
 
 # Instantiate the app
 app = create_app()
+
+# Add this for Render deployment debugging
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app.main:app", host="0.0.0.0", port=port)
