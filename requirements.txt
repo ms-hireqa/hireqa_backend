@@ -35,7 +35,7 @@ mypy==1.8.0
 
 # Supabase
 supabase==2.13.0
-gotrue==2.8.2
+gotrue==2.8.1
 postgrest==1.2.0
 realtime==2.3.0
 storage3==0.12.0
@@ -44,3 +44,4 @@ storage3==0.12.0
 python-dateutil==2.9.0
 python-slugify==8.0.4
 pytz==2024.1
+
