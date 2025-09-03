@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional, List, Union, Dict, Any
 from datetime import datetime, date
 from enum import Enum
@@ -66,6 +66,8 @@ class UserUpdate(BaseModel):
     preferred_job_locations: Optional[List[str]] = None
 
 class UserInDB(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     candidate_id: int
     is_email_verified: bool = False
     accepted_terms: bool = False
@@ -73,22 +75,18 @@ class UserInDB(UserBase):
     updated_at: Optional[datetime] = None
     email_verified_at: Optional[datetime] = None
 
-    class Config:
-        orm_mode = True
-
 # Authentication Models
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
 class UserResponse(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     candidate_id: int
     is_email_verified: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
-
-    class Config:
-        orm_mode = True
 
 # Availability Models
 class AvailabilityBase(BaseModel):
@@ -126,11 +124,10 @@ class EducationUpdate(BaseModel):
     relevant_projects: Optional[str] = None
 
 class EducationInDB(EducationBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     education_id: int
     candidate_id: int
-
-    class Config:
-        orm_mode = True
 
 # Work Experience Models
 class WorkExperienceBase(BaseModel):
@@ -155,8 +152,7 @@ class WorkExperienceUpdate(BaseModel):
     is_current: Optional[bool] = None
 
 class WorkExperienceInDB(WorkExperienceBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     experience_id: int
     candidate_id: int
-
-    class Config:
-        orm_mode = True
